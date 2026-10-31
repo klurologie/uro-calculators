@@ -12,7 +12,7 @@ header{background:linear-gradient(135deg,#102a43,#1769aa);color:#fff;padding:25p
 </style></head><body>
 <header><div class="wrap"><h1>Uro Calculators</h1><p>A practical collection of urology calculators and clinical decision-support tools.</p></div></header>
 <main><nav class="tabs" role="tablist" aria-label="Calculators">
-<button class="tab" role="tab" aria-controls="panel-stone" aria-selected="true" data-panel="stone">Stone Volume</button><button class="tab" role="tab" aria-controls="panel-mimic" aria-selected="false" data-panel="mimic">MIMIC · Stone Passage</button><button class="tab" role="tab" aria-controls="panel-leibovich" aria-selected="false" data-panel="leibovich">Leibovich · RCC</button><button class="tab" role="tab" aria-controls="panel-renal" aria-selected="false" data-panel="renal">RENAL Score</button><button class="tab" role="tab" aria-controls="panel-nmibc" aria-selected="false" data-panel="nmibc">EAU · NMIBC Risk</button><button class="tab" role="tab" aria-controls="panel-mskcc" aria-selected="false" data-panel="mskcc">MSKCC · Prostate</button></nav>
+<button class="tab" role="tab" aria-controls="panel-stone" aria-selected="true" data-panel="stone">Stone Volume</button><button class="tab" role="tab" aria-controls="panel-stonefree" aria-selected="false" data-panel="stonefree">STONE · PCNL</button><button class="tab" role="tab" aria-controls="panel-solve" aria-selected="false" data-panel="solve">SOLVE · fURS</button><button class="tab" role="tab" aria-controls="panel-mimic" aria-selected="false" data-panel="mimic">MIMIC · Stone Passage</button><button class="tab" role="tab" aria-controls="panel-leibovich" aria-selected="false" data-panel="leibovich">Leibovich · RCC</button><button class="tab" role="tab" aria-controls="panel-renal" aria-selected="false" data-panel="renal">RENAL Score</button><button class="tab" role="tab" aria-controls="panel-nmibc" aria-selected="false" data-panel="nmibc">EAU · NMIBC Risk</button><button class="tab" role="tab" aria-controls="panel-mskcc" aria-selected="false" data-panel="mskcc">MSKCC · Prostate</button></nav>
 <section class="panel active" id="panel-stone" role="tabpanel"><div class="card tool-card"><h2>Stone Volume Calculator</h2><p class="sub">All dimensions in mm · Volume in cm³</p>
 <div class="shape-toggle" role="group" aria-label="Stone geometry"><button type="button" class="active" data-shape="sphere">Sphere — round stone</button><button type="button" data-shape="ellipsoid">Ellipsoid — oval stone</button></div>
 <div class="dimension"><div class="dimension-head"><label for="height">Height</label><span class="unit">mm</span></div><div class="dimension-controls"><input id="heightRange" type="range" min="1" max="100" step="0.1" value="10" aria-label="Height slider"><input id="height" type="number" min="0.1" max="1000" step="0.1" value="10"></div></div>
@@ -21,6 +21,66 @@ header{background:linear-gradient(135deg,#102a43,#1769aa);color:#fff;padding:25p
 <div class="result"><div class="result-label">CALCULATED VOLUME</div><div class="result-value" id="volumeCm">0.524 cm³</div><div class="result-equivalent">Equivalent: <strong id="volumeMm">523.6 mm³</strong></div></div>
 <div class="formula" id="formula">Sphere formula: V = π × D³ / 6, using the mean of the three dimensions as diameter.</div><div class="actions"><button class="btn secondary" id="reset">Reset dimensions</button><button class="btn" id="copyResult">Copy result</button></div>
 <p class="notice">This calculator provides a geometric estimate only. Irregular stone shape and imaging measurement variability can affect the true volume. Use clinical judgement and local practice.</p></div></section>
+
+<style>
+#panel-stonefree .sf-step{border:1px solid var(--border);border-radius:14px;padding:17px;margin:13px 0;background:#fff}
+#panel-stonefree .sf-step h3{font-size:1.02rem;color:var(--navy);margin:0 0 5px}
+#panel-stonefree .sf-help{color:var(--muted);font-size:.86rem;margin:0 0 12px}
+#panel-stonefree .sf-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#panel-stonefree .sf-option{display:flex;gap:10px;align-items:center;border:1.5px solid var(--border);border-radius:11px;padding:12px;cursor:pointer;min-height:52px}
+#panel-stonefree .sf-option:has(input:checked){border-color:var(--blue);background:#edf6ff}
+#panel-stonefree .sf-option input{accent-color:var(--blue)}
+#panel-stonefree .sf-option b{margin-left:auto;white-space:nowrap;color:var(--blue)}
+#panel-stonefree .sf-measure{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:12px}
+#panel-stonefree .sf-measure label{font-weight:700;font-size:.9rem;display:grid;gap:5px}
+#panel-stonefree .sf-measure input{border:1px solid var(--border);border-radius:9px;padding:11px;font-size:1rem;width:135px;max-width:100%}
+#panel-stonefree .sf-area{background:var(--soft);border-radius:9px;padding:10px 13px;font-size:.9rem}
+#panel-stonefree .sf-results{background:linear-gradient(135deg,#102a43,#174f75);color:white;border-radius:15px;padding:22px;margin:18px 0 13px;display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
+#panel-stonefree .sf-results strong{display:block;font-size:2rem;line-height:1.2}
+#panel-stonefree .sf-results span{font-size:.82rem;color:#d5e5f1}
+#panel-stonefree .sf-results p{grid-column:1/-1;margin:0;color:#d5e5f1;font-size:.85rem}
+@media(max-width:600px){#panel-stonefree .sf-options{grid-template-columns:1fr}#panel-stonefree .sf-results{grid-template-columns:1fr 1fr}}
+</style>
+<section class="panel" id="panel-stonefree" role="tabpanel"><div class="card tool-card">
+<h2>S.T.O.N.E. Nephrolithometry Score</h2><p class="sub">CT-based stone complexity assessment before percutaneous nephrolithotomy (PCNL).</p>
+<div class="sf-step"><h3>S · Stone size in mm²</h3><p class="sf-help">Largest cross-sectional stone area on noncontrast CT (length × width in mm), as categorized in the MDCalc calculator.</p>
+<div class="sf-options">
+<label class="sf-option"><input type="radio" name="sf-size" value="1"><span>0–399 mm²</span><b>+1</b></label>
+<label class="sf-option"><input type="radio" name="sf-size" value="2"><span>400–799 mm²</span><b>+2</b></label>
+<label class="sf-option"><input type="radio" name="sf-size" value="3"><span>800–1599 mm²</span><b>+3</b></label>
+<label class="sf-option"><input type="radio" name="sf-size" value="4"><span>≥1600 mm²</span><b>+4</b></label>
+</div></div>
+<div class="sf-step"><h3>T · Tract length (skin-to-stone distance)</h3><p class="sf-help">Measured on preoperative noncontrast CT in mm.</p><div class="sf-options"><label class="sf-option"><input type="radio" name="sf-tract" value="1"><span>≤100 mm</span><b>+1</b></label><label class="sf-option"><input type="radio" name="sf-tract" value="2"><span>&gt;100 mm</span><b>+2</b></label></div></div>
+<div class="sf-step"><h3>O · Obstruction / hydronephrosis</h3><div class="sf-options"><label class="sf-option"><input type="radio" name="sf-obstruction" value="1"><span>None or mild</span><b>+1</b></label><label class="sf-option"><input type="radio" name="sf-obstruction" value="2"><span>Moderate or severe</span><b>+2</b></label></div></div>
+<div class="sf-step"><h3>N · Number of involved calyces</h3><div class="sf-options"><label class="sf-option"><input type="radio" name="sf-calyces" value="1"><span>1–2 calyces</span><b>+1</b></label><label class="sf-option"><input type="radio" name="sf-calyces" value="2"><span>3 calyces</span><b>+2</b></label><label class="sf-option"><input type="radio" name="sf-calyces" value="3"><span>Complete staghorn calculus</span><b>+3</b></label></div></div>
+<div class="sf-step"><h3>E · Essence / stone density</h3><p class="sf-help">Mean stone attenuation in Hounsfield units on noncontrast CT.</p><div class="sf-options"><label class="sf-option"><input type="radio" name="sf-density" value="1"><span>≤950 HU</span><b>+1</b></label><label class="sf-option"><input type="radio" name="sf-density" value="2"><span>&gt;950 HU</span><b>+2</b></label></div></div>
+<div class="sf-results" aria-live="polite"><div><strong id="sf-score">—</strong><span>S.T.O.N.E. score (5–13)</span></div><div><strong id="sf-complexity">Incomplete</strong><span>PCNL complexity (validation-study categories)</span></div><p id="sf-interpretation">Complete all five parameters to calculate the score.</p></div>
+<div class="actions"><button type="button" class="btn secondary" id="sf-reset">Reset calculator</button><button type="button" class="btn" id="sf-copy">Copy result</button></div>
+<p class="notice"><strong>Clinical interpretation:</strong> Higher scores are associated with lower stone-free rates following PCNL. This score is <em>not</em> a validated patient-specific percentage prediction. A validation cohort reported stone-free rates of 84.8% (scores 5–7), 74.4% (8–10) and 60.9% (11–13); these are study-specific group observations, not individual probabilities. Definitions of stone-free status and imaging protocols vary. <a href="https://pubmed.ncbi.nlm.nih.gov/23540858/" target="_blank" rel="noopener noreferrer">Original study ↗</a> · <a href="https://www.mdcalc.com/calc/2044/stone-nephrolithometry-score-renal-calculi" target="_blank" rel="noopener noreferrer">MDCalc reference ↗</a></p>
+</div></section>
+
+<style>
+#panel-solve .solve-item{border:1px solid var(--border);border-radius:14px;padding:17px;margin:13px 0}
+#panel-solve .solve-item h3{font-size:1rem;margin:0 0 11px}
+#panel-solve .solve-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px}
+#panel-solve .solve-options label{display:flex;align-items:center;gap:8px;border:1px solid var(--border);padding:12px;border-radius:10px;cursor:pointer}
+#panel-solve .solve-options label:has(input:checked){border-color:var(--blue);background:var(--soft)}
+#panel-solve input[type=number]{padding:11px;border:1px solid var(--border);border-radius:9px;width:140px;max-width:100%;font:inherit}
+#panel-solve .solve-output{background:var(--navy);color:#fff;border-radius:14px;padding:20px;margin-top:18px}
+#panel-solve .solve-output strong{display:block;font-size:2rem}
+</style>
+<section class="panel" id="panel-solve" role="tabpanel"><div class="card tool-card">
+<h2>S.O.L.V.E. Score · Flexible Ureteroscopy</h2>
+<p class="sub">CT-based scoring for residual-stone risk after flexible ureteroscopy (fURS/RIRS). Higher scores indicate a lower expected stone-free rate.</p>
+<div class="solve-item"><h3>S · Stone surface area (mm²)</h3><p class="notice">Select the stone surface-area category based on preoperative CT.</p><div class="solve-options"><label><input type="radio" name="solve-size" value="1"> &lt;100 mm²</label><label><input type="radio" name="solve-size" value="2"> 100–250 mm²</label><label><input type="radio" name="solve-size" value="3"> &gt;250 mm²</label></div></div></div>
+<div class="solve-item"><h3>O · Degree of obstruction (mm)</h3><div class="solve-options"><label><input type="radio" name="solve-obstruction" value="1"> ≤20 mm</label><label><input type="radio" name="solve-obstruction" value="2"> &gt;20 mm</label></div></div>
+<div class="solve-item"><h3>L · Infundibular length</h3><div class="solve-options"><label><input type="radio" name="solve-length-class" value="1"> ≤25 mm</label><label><input type="radio" name="solve-length-class" value="2"> &gt;25 mm</label></div></div>
+<div class="solve-item"><h3>V · Number of involved calyces / location</h3><div class="solve-options"><label><input type="radio" name="solve-location" value="1"> Renal pelvis or upper ureter</label><label><input type="radio" name="solve-location" value="2"> ≤1 calyx</label><label><input type="radio" name="solve-location" value="3"> ≥2 calyces</label></div></div>
+<div class="solve-item"><h3>E · Stone density</h3><div class="solve-options"><label><input type="radio" name="solve-density" value="1"> ≤950 HU</label><label><input type="radio" name="solve-density" value="2"> &gt;950 HU</label></div></div>
+<div class="solve-output" aria-live="polite"><strong id="solve-score">—</strong><span>S.O.L.V.E. score</span><p id="solve-meaning">Complete all five parameters.</p></div>
+<div class="actions"><button class="btn secondary" type="button" id="solve-reset">Reset</button><button class="btn" type="button" id="solve-copy">Copy result</button></div>
+<p class="notice"><strong>Clinical note:</strong> This implementation uses the five criteria and cutoffs presented by MedXY. Higher totals indicate higher residual-stone risk. An exact individual stone-free percentage is intentionally not displayed because a validated score-to-probability conversion was not confirmed. <a href="https://www.medxy.ai/calculators/solve-score-flexible-ureteroscopy-stone-free-rate?locale=en" target="_blank" rel="noopener noreferrer">MedXY source ↗</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9547458/" target="_blank" rel="noopener noreferrer">Published comparative study ↗</a></p>
+</div></section>
 <section class="panel" id="panel-mimic" role="tabpanel"><div class="card tool-card"><h2>MIMIC · Stone Passage</h2><p class="sub">Original BURST Urology Collaborative tool for stone passage support.</p><div class="external"><a href="https://bursturologycollaborative.github.io/" target="_blank" rel="noopener noreferrer">Open the original MIMIC calculator ↗</a><p>If the embedded calculator is blank, open it directly in a new tab.</p></div><div class="frame-wrap"><iframe title="BURST MIMIC calculator" data-src="https://bursturologycollaborative.github.io/" loading="lazy"></iframe></div><p class="notice">Hosted and maintained by its original publisher.</p></div></section>
 <style>
 #panel-leibovich .lb-step{border:1px solid var(--border);border-radius:14px;padding:17px;margin:13px 0;background:#fff}
@@ -217,4 +277,46 @@ document.querySelectorAll('#panel-leibovich input[type="radio"]').forEach(el=>el
 document.getElementById('lb-reset').addEventListener('click',()=>{names.forEach(name=>{document.querySelector('input[name="lb-'+name+'"]').checked=true});calculate()});
 calculate();
 })();
-</script></body></html>
+</script>
+<script>
+(function(){'use strict';
+const get=(id)=>document.getElementById(id);
+const value=(name)=>{const e=document.querySelector('input[name="'+name+'"]:checked');return e?Number(e.value):null;};
+function update(){
+const size=value('sf-size');
+const other=['sf-tract','sf-obstruction','sf-calyces','sf-density'].map(value);
+if(size===null||other.some(v=>v===null)){
+get('sf-score').textContent='—';get('sf-complexity').textContent='Incomplete';get('sf-interpretation').textContent='Complete all five parameters to calculate the score.';return;
+}
+const score=size+other.reduce((a,b)=>a+b,0);
+const tier=score<=7?'Low':score<=10?'Moderate':'High';
+const rate=score<=7?'84.8%':score<=10?'74.4%':'60.9%';
+get('sf-score').textContent=score;get('sf-complexity').textContent=tier;
+get('sf-interpretation').textContent='Observed stone-free rate: '+rate+' in a published validation cohort for this score band. This is not an individualized probability.';
+}
+get('panel-stonefree').querySelectorAll('input').forEach(el=>el.addEventListener('input',update));
+get('sf-reset').addEventListener('click',()=>{get('panel-stonefree').querySelectorAll('input').forEach(el=>{if(el.type==='radio')el.checked=false;else el.value='';});update();});
+get('sf-copy').addEventListener('click',()=>{if(get('sf-score').textContent==='—')return;const t='S.T.O.N.E. nephrolithometry score: '+get('sf-score').textContent+'/13; '+get('sf-complexity').textContent+' complexity. '+get('sf-interpretation').textContent;if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).catch(()=>{});});
+update();
+})();
+</script>
+
+<script>
+(function(){
+const root=document.getElementById('panel-solve');
+const groups=['solve-size','solve-obstruction','solve-length-class','solve-location','solve-density'];
+const $=id=>document.getElementById(id);
+function update(){
+const values=groups.map(name=>root.querySelector('input[name="'+name+'"]:checked'));
+if(values.some(x=>!x)){$('solve-score').textContent='—';$('solve-meaning').textContent='Complete all five parameters.';return;}
+const score=values.reduce((sum,x)=>sum+Number(x.value),0);
+$('solve-score').textContent=score+' / 12';
+$('solve-meaning').textContent='Higher scores indicate a higher risk of residual stones after fURS. This is a relative risk score, not a calibrated patient-specific stone-free percentage.';
+}
+root.querySelectorAll('input').forEach(el=>el.addEventListener('input',update));
+$('solve-reset').addEventListener('click',()=>{root.querySelectorAll('input').forEach(el=>{if(el.type==='radio')el.checked=false;else el.value='';});update();});
+$('solve-copy').addEventListener('click',()=>{if($('solve-score').textContent==='—')return;const str='S.O.L.V.E. score (fURS): '+$('solve-score').textContent+'. Higher score indicates higher residual stone risk.';if(navigator.clipboard)navigator.clipboard.writeText(str).catch(()=>{});});
+update();
+})();
+</script>
+</body></html>
